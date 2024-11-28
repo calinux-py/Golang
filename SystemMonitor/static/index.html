@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Performance Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    canvas {
+      max-width: 100%;
+      height: 400px;
+    }
+  </style>
+</head>
+<body>
+<h1>System Performance Monitor</h1>
+<canvas id="performanceChart"></canvas>
+
+<script>
+  const ctx = document.getElementById('performanceChart').getContext('2d');
+  const performanceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'CPU (%)',
+          data: [],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          fill: false,
+        },
+        {
+          label: 'Memory (%)',
+          data: [],
+          borderColor: 'rgba(255, 99, 132, 1)',
+          fill: false,
+        },
+        {
+          label: 'Disk (%)',
+          data: [],
+          borderColor: 'rgba(54, 162, 235, 1)',
+          fill: false,
+        },
+        {
+          label: 'Download (B/s)',
+          data: [],
+          borderColor: 'rgba(255, 206, 86, 1)',
+          fill: false,
+        },
+        {
+          label: 'Upload (B/s)',
+          data: [],
+          borderColor: 'rgba(153, 102, 255, 1)',
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'minute',
+            displayFormats: {
+              minute: 'HH:mm'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Value'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+      },
+      animation: false,
+    }
+  });
+
+  async function fetchMetrics() {
+    try {
+      const response = await fetch('/metrics');
+      const data = await response.json();
+      updateChart(data);
+    } catch (error) {
+      console.error('Error fetching metrics:', error);
+    }
+  }
+
+  function updateChart(data) {
+    performanceChart.data.labels = data.map(point => new Date(point.timestamp));
+
+    performanceChart.data.datasets[0].data = data.map(point => point.cpu_percent);
+    performanceChart.data.datasets[1].data = data.map(point => point.memory_percent);
+    performanceChart.data.datasets[2].data = data.map(point => point.disk_usage);
+    performanceChart.data.datasets[3].data = data.map(point => point.network_download);
+    performanceChart.data.datasets[4].data = data.map(point => point.network_upload);
+
+    performanceChart.update();
+  }
+
+  // Initial fetch
+  fetchMetrics();
+
+  // Fetch every 5 seconds
+  setInterval(fetchMetrics, 5000);
+</script>
+</body>
+</html>
